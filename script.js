@@ -35,6 +35,9 @@ var currentJumpTime;
 var millis, deltaMillis;
 var gamePaused;
 
+var wallsLeft;
+var wallsRight;
+
 // This allows the player to press any of the arrow keys (as well as spacebar, just
 // in case you wanted to program that eventually) without interfering with the
 // browser window.
@@ -44,7 +47,7 @@ window.addEventListener("keydown", function(e) {
   if(gameKeys.indexOf(key) >= 0) {
       e.preventDefault();
   }
-});
+})
 
 function preload() {
   // load background image
@@ -106,6 +109,9 @@ function buildLevel() {
   platforms = new Group();
   monsters = new Group();
   collectables = new Group();
+  goals = new Group();
+  firstOfPlatform = new Group();
+  lastOfPlatform = new Group();
 
   // create platforms, monsters, and any other game objects
   // best method is to draw sprites from left to right on the screen
@@ -119,8 +125,27 @@ function buildLevel() {
 
   createPlatform(1300, 510, 6);
   //createCollectable(300, 340);
-  createMonster(1400, 400, -1);
+  createMonster(1400, 400, 1);
+  createMonster(1800,400,-1);
 
+  createPlatform(2300, 490, 5);
+  createCollectable(2100, 300);
+  createMonster(2500, 400, 1);
+
+  createPlatform(3000, 600, 9);
+  createCollectable(3900, 470);
+  createMonster(3300, 550, 1);
+  createMonster(3800, 550, -1);
+
+  createPlatform(4200, 510, 3);
+  createPlatform(4600,490,2);
+  createPlatform()
+  //createCollectable(300, 340);
+  createMonster(4300, 460, 1);
+  //createMonster(1400, 400, -1);
+  //createMonster(1400, 400, 1);
+  //createMonster(1400, 400, -1);
+  //createGoal(1300,510);
 }
 
 // Creates a player sprite and adds animations and a collider to it
@@ -135,6 +160,11 @@ function createPlayer() {
   //player.debug = true;
 }
 
+function createGoal(x,y){
+  var goalImage = createSprite (x, y);
+  goalImage.addToGroup(goals);
+}
+
 // Creates a platform of specified length (len) at x, y.
 // Value of len must be >= 2
 function createPlatform(x, y, len) {
@@ -142,6 +172,8 @@ function createPlatform(x, y, len) {
   var last = createSprite(x + ((len - 1) * 128), y, 0, 0);
   first.addToGroup(platforms);
   last.addToGroup(platforms);
+  first.addToGroup(firstOfPlatform);
+  last.addToGroup(lastOfPlatform);
   first.addImage(platformImageFirst);
   last.addImage(platformImageLast);
   //first.debug = true;
@@ -155,6 +187,7 @@ function createPlatform(x, y, len) {
     }
   }
 }
+
 
 // Creates a monster sprite and adds animations and a collider to it.
 // Also sets the monster's initial velocity.
@@ -173,6 +206,7 @@ function createMonster(x, y, velocity) {
     monster.mirrorX(1);
   }
   //monster.debug = true;
+
 }
 
 // Creates a collectable sprite and adds an image to it.
@@ -214,7 +248,19 @@ function checkCollisions() {
   monsters.collide(platforms,platformCollision);
   player.collide(monsters,playerMonsterCollision);
   player.overlap(collectables,getCollectable);
-  monsters.collide(platforms,monsterSwitch);
+  monsters.overlap(firstOfPlatform,flipRight);
+  monsters.overlap(lastOfPlatform,flipLeft);
+  player.overlap(goals,executeWin);
+}
+
+function flipRight(sprite,platform){
+  sprite.velocity.x = 1;
+  sprite.mirrorX(1);
+}
+
+function flipLeft(sprite,platform){
+  sprite.velocity.x = -1;
+  sprite.mirrorX(-1);
 }
 
 // Callback function that runs when the player or a monster collides with a
@@ -280,10 +326,7 @@ function checkIdle() {
   }
 }
 
-//Function that makes monster switch directions when it hits end of platform
-function monsterSwitch(){
-  monster.velocity.x = 1;
-}
+
 
 // Check if the player is falling. If she is not grounded and her y velocity is
 // greater than 0, then set her animation to "fall".
@@ -392,7 +435,8 @@ function updateDisplay() {
 // Anything can happen here, but the most important thing is that we call resetGame()
 // after a short delay.
 function executeWin() {
-
+  noLoop();
+  setTimeout(resetGame, 1000);
 }
 
 // Called when the player has lost the game (e.g., fallen off a cliff or touched
